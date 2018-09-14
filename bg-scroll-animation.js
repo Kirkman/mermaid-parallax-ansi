@@ -1,8 +1,9 @@
 load("sbbsdefs.js");
 load("frame.js");
+load("frame-extensions.js")
 load("sprite.js");
+load("helper-functions.js");
 load(js.exec_dir + "frame-transitions.js");
-load(js.exec_dir + "helper-functions.js");
 
 // GLOBAL FRAME VARIABLES
 var player = new Object();
@@ -18,51 +19,6 @@ var highBlack = 'HK0';
 var highYellowDarkBlue = 'HY4';
 var highWhiteDarkCyan = 'HW6';
 
-
-// Make an empty frame completely transparent
-function clearFrame(theFrame) {
-	var x, y, xl, yl;
-	xl = theFrame.data.length;
-	for (x=0; x<xl; x++) {
-		yl = theFrame.data[x].length;
-		for (y=0; y<yl; y++) {
-			theFrame.data[x][y].ch = undefined;
-			theFrame.data[x][y].attr = undefined;
-		}
-	}
-}
-
-
-// Fill an empty frame with particular character
-function fillFrame(theFrame,theChar,theAttr) {
-	var x, y, xl, yl;
-	xl = theFrame.data.length;
-	for (x=0; x<xl; x++) {
-		yl = theFrame.data[x].length;
-		for (y=0; y<yl; y++) {
-			theFrame.data[x][y].ch = theChar;
-			theFrame.data[x][y].attr = theAttr;
-		}
-	}
-}
-
-// Mask any frame. Turns all instances of characters with given attributes transparent.
-function maskFrame(theFrame,maskChar,maskAttr) {
-	var x, y, xl, yl;
-	xl = theFrame.data.length;
-	for (x=0; x<xl; x++) {
-		yl = theFrame.data[x].length;
-		for (y=0; y<yl; y++) {
-			var theChar = theFrame.data[x][y];
-			// If this character matches, then delete the character attributes 
-			// in order to make it act as transparent.
-			if (theChar.ch == maskChar && theChar.attr == maskAttr) {
-				theFrame.data[x][y].ch = undefined;
-				theFrame.data[x][y].attr = undefined;
-			} 
-		}
-	}
-}
 
 
 function makeBg() {
@@ -88,7 +44,8 @@ function makeBg() {
 		bgFrame2,
 		bgFrame1
 	];
-	// initialize each layer with the same properties
+
+	// Mask each frame and set the same properties
 	for (var b=0; b<bgFrameArray.length; b++) {
 		// FORMAT: maskFrame( frame, maskChar, maskAttr )
 		// ascii(219) = solid block
@@ -114,7 +71,6 @@ function makeBg() {
 	//player.sprite.frame.draw();
 
 	fgFrame.transparent = true;
- 	//fillFrame(fgFrame,ascii(219), BLACK);
 	fgFrame.top();
 	fgFrame.open();
 
@@ -257,8 +213,7 @@ function play() {
 				var cleanupSize = xl-x;
 				for (var oldx=xl-cleanupSize; oldx<xl; oldx++) {
 					for (y=0; y<yl; y++) {
-						fgFrame.data[y][oldx].ch = undefined;
-						fgFrame.data[y][oldx].attr = undefined;
+						fgFrame.clearData(oldx,y);
 					}
 				}
 			}
@@ -276,8 +231,7 @@ function play() {
 					var randomIndex = Math.floor(Math.random() * pixelArray[p].length);
 					var randomPixel = pixelArray[p].splice(randomIndex, 1);
 					//debug( 'randomIndex: ' + randomIndex + ' | randomPixel: ' + randomPixel  );
-					fgFrame.data[randomPixel][x-p].ch = undefined;
-					fgFrame.data[randomPixel][x-p].attr = undefined;
+					fgFrame.clearData(x-p,randomPixel);
 				}
 			}
 			x = x - (wipeSize);
@@ -309,8 +263,7 @@ function play() {
 				for (c = 0; c<cleanupSize; c++) {
 					var oldx = (x + cleanupSize) - c;
 					for (y=0; y<yl; y++) {
-						fgFrame.data[y][oldx].ch = ascii(214);
-						fgFrame.data[y][oldx].attr = BLACK;
+						fgFrame.setData(oldx,y,ascii(214),BLACK);
 					}
 				}
 			}
@@ -324,8 +277,7 @@ function play() {
 					var randomIndex = Math.floor(Math.random() * pixelArray[p].length);
 					var randomPixel = pixelArray[p].splice(randomIndex, 1);
 					// ascii(219) = solid block; 5 = Magenta
-					fgFrame.data[randomPixel][x-p].ch = ascii(214);
-					fgFrame.data[randomPixel][x-p].attr = BLACK;
+					fgFrame.setData(x-p,randomPixel,ascii(214),BLACK);
 				}
 			}
 			x = x - (wipeSize);

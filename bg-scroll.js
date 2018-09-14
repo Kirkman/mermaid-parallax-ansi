@@ -2,11 +2,12 @@ load("sbbsdefs.js");
 load("json-client.js");
 load("event-timer.js");
 load("frame.js");
+load("frame-extensions.js")
 load("layout.js");
 load("sprite.js");
+load("helper-functions.js");
 
 load(js.exec_dir + "frame-transitions.js");
-load(js.exec_dir + "helper-functions.js");
 
 
 var serverIni;
@@ -114,42 +115,6 @@ function makeBg() {
 
 
 }
-
-// this version makes an empty frame completely transparent
-function clearFrame(theFrame) {
-	var x, y, xl, yl;
-	xl = theFrame.data.length;
-	for (x=0; x<xl; x++) {
-		yl = theFrame.data[x].length;
-		for (y=0; y<yl; y++) {
-			theFrame.data[x][y].ch = undefined;
-			theFrame.data[x][y].attr = undefined;
-		}
-	}
-}
-
-
-// this version masks the entire sprite up front.
-function maskFrame(theFrame,maskChar,maskAttr) {
-	var x, y, xl, yl;
-	xl = theFrame.data.length;
-	for (x=0; x<xl; x++) {
-		yl = theFrame.data[x].length;
-		for (y=0; y<yl; y++) {
-			var theChar = theFrame.data[x][y];
-			//debug(theChar);
-			// If this character is an empty black space, 
-			// then delete the character attributes in order
-			// to make it act as transparent.
-			if (theChar.ch == maskChar && theChar.attr == maskAttr) {
-//			if (theChar.ch == ascii(219) && theChar.attr == 514) {
-				theFrame.data[x][y].ch = undefined;
-				theFrame.data[x][y].attr = undefined;
-			} 
-		}
-	}
-}
-
 
 
 

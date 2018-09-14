@@ -1,20 +1,46 @@
 load("sbbsdefs.js");
 
-// this version masks the entire sprite up front.
+// Make transparent the parts of a frame that match a given char and attr
+// By using `data_width` and `data_height`, we ensure we mask ALL characters,
+// even those which are outside the bounds of the frame.
 function maskFrame(theFrame,maskChar,maskAttr) {
 	var x, y, xl, yl;
-	xl = theFrame.data.length;
+	xl = theFrame.data_width;
+	yl = theFrame.data_height;
 	for (x=0; x<xl; x++) {
-		yl = theFrame.data[x].length;
 		for (y=0; y<yl; y++) {
-			var theChar = theFrame.data[x][y];
-			// If this character is an empty black space, 
-			// then delete the character attributes in order
-			// to make it act as transparent.
+			var theChar = theFrame.getData(x,y);
+			// If this character matches, then delete the character attributes 
+			// in order to make it act as transparent.
 			if (theChar.ch == maskChar && theChar.attr == maskAttr) {
-				theFrame.data[x][y].ch = undefined;
-				theFrame.data[x][y].attr = undefined;
-			} 
+				// theFrame.setData(x,y,undefined,undefined);
+				theFrame.clearData(x,y);
+			}
+		}
+	}
+}
+
+// Make frame completely transparent
+function emptyFrame(theFrame) {
+	var x, y, xl, yl;
+	xl = theFrame.width;
+	for (x=0; x<xl; x++) {
+		yl = theFrame.height;
+		for (y=0; y<yl; y++) {
+			// theFrame.setData(x,y,undefined,undefined);
+			theFrame.clearData(x,y);
+		}
+	}
+}
+
+// Fill an empty frame with particular character
+function fillFrame(theFrame,theChar,theAttr) {
+	var x, y, xl, yl;
+	xl = theFrame.width;
+	for (x=0; x<xl; x++) {
+		yl = theFrame.height;
+		for (y=0; y<yl; y++) {
+			theFrame.setData(x,y,theChar,theAtrr)
 		}
 	}
 }
