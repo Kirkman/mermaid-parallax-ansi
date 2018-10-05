@@ -9,6 +9,7 @@ load(js.exec_dir + "frame-transitions.js");
 var player = new Object();
 var bgFrame, bgFrame1, bgFrame2, bgFrame3, bgFrame4, fgFrame;
 var bgFrameArray = [];
+var canvasFrame;
 
 // COLOR CODES
 var lowWhite = 'NW0';
@@ -19,6 +20,139 @@ var highBlack = 'HK0';
 var highYellowDarkBlue = 'HY4';
 var highWhiteDarkCyan = 'HW6';
 
+
+// Compare a canvas frame against data in another frame. Repaint characters that are different.
+function repaintCanvas( newFrame, canvas ) {
+	var newFrameData = newFrame.dump();
+	for (var x=0; x<canvas.width; x++) {
+		for (var y=0; y<canvas.height; y++) {
+			var newChar = newFrameData[y][x];
+			var oldChar = canvas.getData(x,y);
+			// Compare corresponding characters on current canvas and the new frame.
+			// If they are different, repaint the character on the canvas.
+			if ( newChar && (newChar.attr !== oldChar.attr || newChar.ch !== oldChar.ch) ) {
+				canvas.clearData(x,y);
+				canvas.setData(x,y,newChar.ch,newChar.attr);
+			}
+			// If the new frame has a null instead of a character object,
+			// treat that like an empty black space. Draw it on the canvas
+			// if the corresponding character is not also an empty black space.
+			else if ( newChar == null ) {
+				if ( oldChar.ch != ascii(32) || oldChar.attr != BG_BLACK ) {
+					canvas.clearData(x,y);
+					canvas.setData(x,y,ascii(32),BG_BLACK);
+				}
+			}
+		}
+	}
+}
+
+function joshSprite( frame, path ) {
+	if ( frame !== undefined ) {
+		this.frame = frame;
+	}
+	if ( path !== undefined ) {
+		this.path = path;
+	}
+	else {
+		this.path = [];
+	}
+	this.index = 0;
+	this.isInMemory = true;
+}
+
+joshSprite.prototype = {
+	setPath: function( p ) {
+		this.path = p;
+	},
+	getPath: function() {
+		return this.path;
+	},
+	getPathLength: function() {
+		return this.path.length;
+	},
+	getIndex: function() {
+		return this.index;
+	},
+	getPoint: function() {
+		if ( this.index < this.path.length ) {
+			return this.path[ this.index ].point;
+		}
+		return false;
+	},
+	getX: function() {
+		if ( this.index < this.path.length ) {
+			return this.path[ this.index ].point[0];
+		}
+		return false;
+	},
+	getY: function() {
+		if ( this.index < this.path.length ) {
+			return this.path[ this.index ].point[1];
+		}
+		return false;
+	},
+	increment: function(amt) {
+		if ( amt === undefined ) {
+			amt = 1;
+		}
+		this.index += amt;
+	},
+	decrement: function(amt) {
+		if ( amt === undefined ) {
+			amt = 1;
+		}
+		this.index -= amt;
+	},
+	changeBearing: function(n) {
+		var spriteHeight = this.frame.height;
+		this.frame.scrollTo(0 , n*spriteHeight );
+	},
+	changePosition: function(n) {
+		var spriteWidth = this.frame.width;
+		this.frame.scrollTo(n*spriteWidth, 0 );
+	},
+	isOnStage: function() {
+		var screen_rows = console.screen_rows;
+		var screen_cols = console.screen_columns;
+		var sprite_x = this.getX();
+		var sprite_y = this.getY();
+		var sprite_w = this.frame.width;
+		var sprite_h = this.frame.height;
+
+		if (
+			// Not outside left border
+			( sprite_x + sprite_w ) > 0 &&
+			// Not outside right border
+			sprite_x <= screen_cols &&
+			// Not outside top border
+			( sprite_y + sprite_h ) > 0 &&
+			// Not outside bottom border
+			sprite_y <= screen_rows
+		) {
+			return true;
+		}
+		return false;
+	},
+	move: function() {
+		// Get current point on animation path
+		if ( this.getPoint() ) {
+			if ( this.isOnStage() ) {
+				this.frame.moveTo( this.getX(), this.getY() );
+				if (!this.frame.is_open) {
+					//this.frame.draw();
+					this.frame.open();
+				}
+			}
+			else {
+				if (this.frame.is_open) {
+					this.frame.close();
+				}
+			}
+			this.increment();
+		}
+	}
+}
 
 
 function makeBg() {
@@ -35,8 +169,32 @@ function makeBg() {
 	bgFrame3.load(js.exec_dir + '/graphics/background3.bin', 160, 23);
 	bgFrame2.load(js.exec_dir + '/graphics/background2.bin', 160, 23);
 	bgFrame1.load(js.exec_dir + '/graphics/background1.bin', 160, 23);
-	player.sprite = new Sprite.Profile("mermaid", bgFrame, 18, 8, 'e', 'stand');
 	fgFrame.load(js.exec_dir + '/graphics/title1.bin', 80, 24);
+
+	// player.sprite = new Sprite.Profile("mermaid", bgFrame, 18, 8, 'e', 'stand');
+	
+	player.sprite = new joshSprite( new Frame(18, 8, 49, 9, undefined, bgFrame) );
+	player.sprite.frame.load(js.exec_dir + '/sprites/mermaid.bin');
+
+	// Mermaid sprite has several states
+	player.sprite.tailUp = function() {
+		this.changePosition(0);
+	}
+	player.sprite.tailDown = function() {
+		this.changePosition(1);
+	}
+	player.sprite.turnRight = function() {
+		this.changeBearing(0);
+	}
+	player.sprite.turnLeft = function() {
+		this.changeBearing(1);
+	}
+
+	player.sprite.frame.checkbounds = false;
+	// For changing states, we need hscroll but not vscroll
+	player.sprite.frame.h_scroll = true;
+	player.sprite.frame.v_scroll = false;
+	player.sprite.frame.transparent = true;
 
 	bgFrameArray = [
 		bgFrame4,
@@ -68,7 +226,8 @@ function makeBg() {
 		bgFrameArray[b].open();
 	}
 
-	//player.sprite.frame.draw();
+	// player.sprite.frame.open();
+	// player.sprite.frame.draw();
 
 	fgFrame.transparent = true;
 	fgFrame.top();
@@ -92,6 +251,7 @@ function makeBg() {
 	msgFrame.top();
 	msgFrame.draw();
 	msgFrame.open();
+
 	var userInput;
 	while ( ascii(userInput) != 13 ) {
 		userInput = console.getkey(K_UPPER | K_NOCRLF);
@@ -99,6 +259,12 @@ function makeBg() {
 	}
 	msgFrame.close();
 	msgFrame.delete();
+
+	// The Canvas frame will sit atop all the others. We will manually paint this frame with the data
+	// from bgFrame.dump(). Using a canvas with manual repaint is faster than plain bgFrame.cycle();
+	canvasFrame = new Frame(1, 1, 80, 24, BG_BLACK);
+	canvasFrame.transparent = false;
+	canvasFrame.draw();
 
 }
 
@@ -166,9 +332,9 @@ function play() {
 		// - - - - - - - - - - - - - - - - - - - - -
 
 		if ( fr >= numTitleFrames ) {
-			// On first two beats, should be in WALK position
+			// On first two beats, should be in TAILUP position
 			if (beat == 1 || beat == 2 ) {
-				player.sprite.position = 'walk';
+				player.sprite.tailUp();
 				// Iterate over all background layers and scroll them
 				for (var b=0; b<bgFrameArray.length; b++) {
 					var totalMove = 0;
@@ -181,9 +347,9 @@ function play() {
 				}
 			}
 
-			// On first two beats, should be in STAND position
+			// On first two beats, should be in TAILDOWN position
 			else if (beat == 3 || beat == 4 ) {
-				player.sprite.position = 'stand';
+				player.sprite.tailDown();
 				// Iterate over all background layers and scroll them
 				for (var b=0; b<bgFrameArray.length; b++) {
 					var totalMove = 0;
@@ -287,12 +453,15 @@ function play() {
 		// RENDER EVERYTHING TO SCREEN
 		// - - - - - - - - - - - - - - - - - - - - -
 
-		player.sprite.frame.draw();
-		Sprite.cycle();
-		fgFrame.top();
-		fgFrame.refresh();
-		fgFrame.draw();
-		fgFrame.cycle();
+		// player.sprite.frame.draw();
+		// Sprite.cycle();
+		// fgFrame.top();
+		// fgFrame.refresh();
+		// fgFrame.draw();
+		// fgFrame.cycle();
+		repaintCanvas( bgFrame, canvasFrame );
+		canvasFrame.cycle();
+
 // 		if (beat == 1) { mswait(500); }
 
 		// Record what time we finished drawing
@@ -333,11 +502,31 @@ function play() {
 } // play()
 
 
+function cleanup() {
+	var allFrames = [
+		bgFrame,
+		bgFrame1,
+		bgFrame2,
+		bgFrame3,
+		bgFrame4,
+		player.sprite.frame,
+		fgFrame,
+		canvasFrame
+	];
+
+	for (var af=0; af < allFrames.length; af++ ) {
+ 		allFrames[af].close();
+	 	allFrames[af].delete();
+	}
+}
+
+
 
 function main_loop() {
 	makeBg();	
 	bgFrame.cycle();
 	play();
+	cleanup();
 	exit();
 }
 
