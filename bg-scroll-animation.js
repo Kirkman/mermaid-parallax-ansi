@@ -3,6 +3,7 @@ load("frame.js");
 load("frame-extensions.js")
 load("sprite.js");
 load("helper-functions.js");
+load("frame-extensions.js"); // Josh's extra frame stuff, eg: .scrollCircular() method
 load(js.exec_dir + "frame-transitions.js");
 
 // GLOBAL FRAME VARIABLES
@@ -322,7 +323,8 @@ function play() {
 			fgFrame.load(js.exec_dir + '/graphics/title' + beat + '.bin', 80, 24);
 			fgFrame.draw();
 			if (screenShot) {
-				bgFrame.screenShot(js.exec_dir + "/screenshots/mermaid-" + ss + ".bin", false);
+				var ss_padded = ('000'+ss.toString()).slice(-3);
+				bgFrame.screenShot(js.exec_dir + "/screenshots/mermaid-" + ss_padded + ".bin", false);
 				ss++;
 			}
 		}
@@ -470,7 +472,8 @@ function play() {
 		// increment beat counter
 		beat++;
 		if (screenShot) {
-			bgFrame.screenShot(js.exec_dir + "/screenshots/mermaid-" + ss + ".bin", false);
+			var ss_padded = ('000'+ss.toString()).slice(-3);
+			bgFrame.screenShot(js.exec_dir + "/screenshots/mermaid-" + ss_padded + ".bin", false);
 			ss++;
 		}
 //  		debug( 'Frame:' + fr );
@@ -488,7 +491,8 @@ function play() {
 		fgFrame.load(js.exec_dir + '/graphics/credits' + (creditsFr + 1) + '.bin', 80, 24);
 		fgFrame.draw();
 		if (screenShot) {
-			bgFrame.screenShot(js.exec_dir + "/screenshots/mermaid-" + ss + ".bin", false);
+			var ss_padded = ('000'+ss.toString()).slice(-3);
+			bgFrame.screenShot(js.exec_dir + "/screenshots/mermaid-" + ss_padded + ".bin", false);
 			ss++;
 		}
 		mswait(200);
